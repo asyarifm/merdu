@@ -1,0 +1,31 @@
+# The following are files and folder that will be ignored when commiting to git
+# To check the syntax go to the following site https://www.atlassian.com/git/tutorials/saving-changes/gitignore
+
+#########
+#Folders#
+#########
+
+#exact#
+/.gradle/
+/.idea/
+/project/android/obj/
+
+#wildcard#
+build/
+.cxx/
+.externalNativeBuild/
+
+#exceptions#
+
+
+#######
+#Files#
+#######
+
+#exact#
+/local.properties
+
+#wildcard#
+*.iml
+
+#exceptions#
