@@ -1,3 +1,17 @@
 <resources>
-    <string name="app_name">merdu</string>
+    <string name="app_name">Merdu</string>
+
+    <!--  loading message  -->
+    <string name="please_wait">Please Wait</string>
+
+    <!--    empty song list -->
+    <string name="empty_song_list">Let\'s find your favorite artist\'s song. Click search button on top right corner of your screen.</string>
+
+    <!--    searching query-->
+    <string name="search_hint_artist_name">Artist name</string>
+
+    <!--    error message-->
+    <string name="error_song_data_not_found">Oops sorry, fail to to find song based on this artist. Please search another artist</string>
+    <string name="error_fetching_song_data">Oops sorry, fail to fetch song data. Please try again</string>
+    <string name="error_networking_problem">Oops sorry, there is a problem with internet connection. Please check your internet connection and try again</string>
 </resources>

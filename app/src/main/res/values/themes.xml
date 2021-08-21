@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.Merdu" parent="Theme.MaterialComponents.Light.NoActionBar">
+    <style name="Theme.Merdu" parent="Theme.MaterialComponents.Light.DarkActionBar">
         <!-- Primary brand color. -->
 <!--        <item name="colorPrimary">@color/purple_500</item>-->
 <!--        <item name="colorPrimaryVariant">@color/purple_700</item>-->
@@ -19,28 +19,45 @@
 
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
+        <!-- do not change anything for dark theme -->
         <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
+
+        <item name="android:popupMenuStyle">@style/PopupMenuStyle</item>
+        <item name="android:textAppearanceLargePopupMenu">@style/PopupMenuTextLargeStyle</item>
+        <item name="android:textAppearanceSmallPopupMenu">@style/PopupMenuTextSmallStyle</item>
     </style>
 
+    <!--    splash theme-->
     <style name="SplashTheme" parent="Theme.Merdu">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:windowBackground">@drawable/background_splash</item>
     </style>
 
+    <!--    text appearance-->
     <style name="SongTitleTextStyle">
         <item name="textAllCaps">false</item>
-        <item name="android:textSize">20sp</item>
+        <item name="android:textSize">@dimen/h1_text_size</item>
         <item name="android:textColor">@color/gray</item>
     </style>
     <style name="ArtistNameTextStyle">
         <item name="textAllCaps">false</item>
-        <item name="android:textSize">18sp</item>
+        <item name="android:textSize">@dimen/h2_text_size</item>
         <item name="android:textColor">@color/gray</item>
     </style>
     <style name="AlbumNameTextStyle">
         <item name="textAllCaps">false</item>
-        <item name="android:textSize">14sp</item>
+        <item name="android:textSize">@dimen/h3_text_size</item>
+        <item name="android:textColor">@color/gray</item>
+    </style>
+
+    <style name="PopupMenuStyle" parent="@android:style/Widget.PopupMenu">
+        <item name="android:popupBackground">@color/black_primary</item>
+    </style>
+    <style name="PopupMenuTextSmallStyle" parent="TextAppearance.AppCompat.Light.Widget.PopupMenu.Small">
+        <item name="android:textColor">@color/gray</item>
+    </style>
+    <style name="PopupMenuTextLargeStyle" parent="TextAppearance.AppCompat.Light.Widget.PopupMenu.Large">
         <item name="android:textColor">@color/gray</item>
     </style>
 </resources>

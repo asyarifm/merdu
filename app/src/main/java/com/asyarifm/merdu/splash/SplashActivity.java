@@ -12,7 +12,7 @@ public class SplashActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //display splash then go to musicactivity
+        //display splash then go to music activity
         startActivity(new Intent(SplashActivity.this, MusicActivity.class));
         finish();
     }
