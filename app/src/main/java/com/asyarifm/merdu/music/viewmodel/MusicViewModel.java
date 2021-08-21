@@ -37,7 +37,7 @@ public class MusicViewModel extends AndroidViewModel {
     // declare item related to API Request
     private RequestQueue requestQueue;
     private StringRequest stringRequest;
-    private String url = "https://itunes.apple.com/search?entity=song&term=";           // init URL for API request
+    private String url = "https://itunes.apple.com/search?entity=song&limit=200&term=";           // init URL for API request
 
     // declare song list
     private ArrayList<SongItem> songItemList;
@@ -287,13 +287,13 @@ public class MusicViewModel extends AndroidViewModel {
     }
 
     // set selected song item position
-    public void setSelectedPosition(int position) {
+    private void setSelectedPosition(int position) {
         selectedPosition = position;
         _updateSelectedPosition.postValue(selectedPosition);
     }
 
     // set playing song item position
-    public void setPlayingPosition(int position) {
+    private void setPlayingPosition(int position) {
         playingPosition = position;
         _updatePlayingPosition.postValue(playingPosition);
     }
