@@ -137,24 +137,61 @@ public class MusicActivity extends AppCompatActivity implements SongListAdapter.
             @Override
             public void onChanged(Boolean aBoolean) {
                 if (aBoolean) {
-                    songListAdapter.setPlayingPosition(songListAdapter.getSelectedPosition());
+//                    songListAdapter.setPlayingPosition(songListAdapter.getSelectedPosition());
                     buttonPlayPause.setImageDrawable(getDrawable(R.drawable.ic_pause_indicator));
                 } else {
-                    songListAdapter.setPlayingPosition(RecyclerView.NO_POSITION);
+//                    songListAdapter.setPlayingPosition(RecyclerView.NO_POSITION);
                     buttonPlayPause.setImageDrawable(getDrawable(R.drawable.ic_play_indicator));
                 }
             }
         });
-        // start a new artist search once get notified by Livedata
-        viewModel.isNewArtisSearch().observe(this, new Observer<Boolean>() {
+        // update selected position
+        viewModel.updateSelectedPosition().observe(this, new Observer<Integer>() {
             @Override
-            public void onChanged(Boolean aBoolean) {
-                if (aBoolean) {
-                    songListAdapter.setPlayingPosition(RecyclerView.NO_POSITION);
-                    songListAdapter.setSelectedPosition(RecyclerView.NO_POSITION);
-                }
+            public void onChanged(Integer integer) {
+                songListAdapter.setSelectedPosition(integer);
             }
         });
+        // update playing position
+        viewModel.updatePlayingPosition().observe(this, new Observer<Integer>() {
+            @Override
+            public void onChanged(Integer integer) {
+                songListAdapter.setPlayingPosition(integer);
+            }
+        });
+        // get visibility of media player
+        viewModel.getMusicPlayerVisibility().observe(this, new Observer<Integer>() {
+            @Override
+            public void onChanged(Integer integer) {
+                layoutMusicPlayer.setVisibility(integer);
+            }
+        });
+        // get selected song title text
+        viewModel.getSelectedSongTitle().observe(this, new Observer<String>() {
+            @Override
+            public void onChanged(String s) {
+                selectedSongTitleTextView.setText(s);
+            }
+        });
+        // get selected artist name text
+        viewModel.getSelectedArtistName().observe(this, new Observer<String>() {
+            @Override
+            public void onChanged(String s) {
+                selectedArtistNameTextView.setText(s);
+            }
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        viewModel.fetchSongData("");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        viewModel.onDestroy();
     }
 
     //search menu for search song based on artist name
@@ -187,24 +224,20 @@ public class MusicActivity extends AppCompatActivity implements SongListAdapter.
     @Override
     public void onClick(int position) {
         // update selected item position
-        songListAdapter.setSelectedPosition(position);
+        viewModel.onSelectedSongItem(position);
+    }
 
-        // prepare music based on selected song
-        viewModel.prepareMusic(songListAdapter.getSelectedItem());
 
-        // if selected position is valid, display layout music player
-        if (songListAdapter.getSelectedPosition() != RecyclerView.NO_POSITION) {
-            layoutMusicPlayer.setVisibility(View.VISIBLE);
-            // set selected song title and artist name text view
-            // if selected item song is not null
-            SongItem selectedItem = songListAdapter.getSelectedItem();
-            if (selectedItem != null) {
-                selectedSongTitleTextView.setText(selectedItem.songTitle);
-                selectedArtistNameTextView.setText(selectedItem.artistName);
-            }
-        } else {
-            layoutMusicPlayer.setVisibility(View.GONE);
-        }
+    @Override
+    public void onStartLoadImage() {
+        //on start load image, display loading dialog
+        loadingDialog.startLoading();
+    }
+
+    @Override
+    public void onCompletedLoadImage() {
+        //on complete load image, hide loading dialog
+        loadingDialog.stopLoading();
     }
 
     // on create options menu listener

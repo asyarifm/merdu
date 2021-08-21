@@ -1,6 +1,7 @@
 package com.asyarifm.merdu.music.adapter;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
@@ -9,12 +10,17 @@ import android.widget.TextView;
 import android.view.View;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.asyarifm.merdu.R;
 import com.asyarifm.merdu.music.model.SongItem;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 
 import java.util.ArrayList;
 public class SongListAdapter extends RecyclerView.Adapter<SongListAdapter.ItemHolder> {
@@ -33,6 +39,8 @@ public class SongListAdapter extends RecyclerView.Adapter<SongListAdapter.ItemHo
     // listener for song item click
     public interface OnClickListener {
         void onClick(int position);
+        void onStartLoadImage();
+        void onCompletedLoadImage();
     }
 
     // constructor with context as parameter
@@ -66,52 +74,35 @@ public class SongListAdapter extends RecyclerView.Adapter<SongListAdapter.ItemHo
 
     // set selected song item position
     public void setSelectedPosition(int position) {
-        // if position is not valid
-        // update the selected position
-        if (position == RecyclerView.NO_POSITION) {
-            selectedPosition = position;
-            return;
-        }
-
-        if (position == selectedPosition) {
-            // if position equal to current selectedposition
-            // notify the item at position on changes
-            selectedPosition = RecyclerView.NO_POSITION;
-            notifyItemChanged(position);
-        } else {
-            // else notify previous selected position and also the new selected position
-            int prevSelectedPosition = selectedPosition;
-            selectedPosition = position;
-            notifyItemChanged(prevSelectedPosition);
-            notifyItemChanged(selectedPosition);
+        // if selected position is new update
+        if (this.selectedPosition != position) {
+            int prevPosition = this.selectedPosition;
+            this.selectedPosition = position;
+            //if prev position is valid item, notify item changed
+            if (prevPosition != RecyclerView.NO_POSITION) {
+                notifyItemChanged(prevPosition);
+            }
+            //if new position is valid item, notify item changed
+            if (position != RecyclerView.NO_POSITION) {
+                notifyItemChanged(position);
+            }
         }
     }
 
-    // get selected position
-    public int getSelectedPosition() {
-        return selectedPosition;
-    }
 
-    //
     public void setPlayingPosition(int position) {
-        Log.d(TAG, "setPlayingPosition: " + position);
-        // if position is not valid
-        // update the palying position
-        if (position == RecyclerView.NO_POSITION) {
-            playingPosition = RecyclerView.NO_POSITION;
-            notifyDataSetChanged();
-            return;
-        }
-
-        if (playingPosition != RecyclerView.NO_POSITION) {
-            int prevPlayingPositiong = playingPosition;
-            playingPosition = RecyclerView.NO_POSITION;
-            notifyItemChanged(prevPlayingPositiong);
-        }
-
-        if (position != RecyclerView.NO_POSITION) {
-            playingPosition = position;
-            notifyItemChanged(playingPosition);
+        //if position is new position, update
+        if (this.playingPosition != position) {
+            int prevPosition = this.playingPosition;
+            this.playingPosition = position;
+            //if prev position is valid item, notify item changed
+            if (prevPosition != RecyclerView.NO_POSITION) {
+                notifyItemChanged(prevPosition);
+            }
+            //if new position is valid item, notify item changed
+            if (position != RecyclerView.NO_POSITION) {
+                notifyItemChanged(position);
+            }
         }
     }
 
@@ -135,9 +126,23 @@ public class SongListAdapter extends RecyclerView.Adapter<SongListAdapter.ItemHo
 
         // if album art url not empty, create a new thread to load image from url
         if (!albumArtUrl.isEmpty()) {
+            listener.onStartLoadImage();
             Glide.with(ctx)
                     .load(albumArtUrl)
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .listener(new RequestListener<Drawable>() {
+                        @Override
+                        public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+                            listener.onCompletedLoadImage();
+                            return false;
+                        }
+
+                        @Override
+                        public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                            listener.onCompletedLoadImage();
+                            return false;
+                        }
+                    })
                     .into(itemHolder.albumArt);
         }
 
@@ -146,12 +151,13 @@ public class SongListAdapter extends RecyclerView.Adapter<SongListAdapter.ItemHo
         itemHolder.artistName.setText(currentItem.artistName);
         itemHolder.songTitle.setText(currentItem.songTitle);
 
+        // if position is selected position change background color
         if (selectedPosition == position) {
             itemHolder.itemView.setBackgroundColor(ctx.getColor(R.color.black_primary_variant));
         } else {
             itemHolder.itemView.setBackgroundColor(ctx.getColor(R.color.black_primary));
         }
-
+        // if position is playing position display play indicator
         if (playingPosition == position) {
             itemHolder.playingIndicator.setVisibility(View.VISIBLE);
         } else {
@@ -180,6 +186,7 @@ public class SongListAdapter extends RecyclerView.Adapter<SongListAdapter.ItemHo
             artistName = itemView.findViewById(R.id.tv_artist_name);
             albumName = itemView.findViewById(R.id.tv_album_name);
 
+            // notify to listener everytime user click song item
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {

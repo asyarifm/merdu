@@ -4,11 +4,13 @@ import android.app.Application;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.util.Log;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -43,22 +45,36 @@ public class MusicViewModel extends AndroidViewModel {
     // declare all mutable live data
     private MutableLiveData<ArrayList<SongItem>> _updateSongList;
     private MutableLiveData<Boolean> _isMusicPlaying;
-    private MutableLiveData<Boolean> _isNewArtistSearch;
     private MutableLiveData<Boolean> _isLoadingDialogShowing;
+    private MutableLiveData<Integer> _getMusicPlayerVisibility;
+    private MutableLiveData<String> _getSelectedSongTitle;
+    private MutableLiveData<String> _getSelectedArtistName;
     private MutableLiveData<String> _displayMessage;
+    private MutableLiveData<Integer> _updateSelectedPosition;
+    private MutableLiveData<Integer> _updatePlayingPosition;
 
     //declare media player
     private MediaPlayer mediaPlayer;
+    //init prepared song
+    private SongItem preparedSong = null;
+
+    // init selected position and playing position
+    private int selectedPosition = RecyclerView.NO_POSITION;
+    private int playingPosition = RecyclerView.NO_POSITION;
 
     public MusicViewModel(@NonNull Application application) {
         super(application);
 
         //init MutableLiveData
         _updateSongList = new MutableLiveData<>();
-        _isNewArtistSearch = new MutableLiveData<>();
         _isMusicPlaying = new MutableLiveData<>();
         _isLoadingDialogShowing = new MutableLiveData<>();
         _displayMessage = new MutableLiveData<>();
+        _getMusicPlayerVisibility = new MutableLiveData<>();
+        _getSelectedSongTitle = new MutableLiveData<>();
+        _getSelectedArtistName = new MutableLiveData<>();
+        _updateSelectedPosition = new MutableLiveData<>();
+        _updatePlayingPosition = new MutableLiveData<>();
 
         //init song list
         songItemList = new ArrayList<>();
@@ -77,12 +93,21 @@ public class MusicViewModel extends AndroidViewModel {
             @Override
             public void onCompletion(MediaPlayer mp) {
                 _isMusicPlaying.postValue(false);
+                setPlayingPosition(RecyclerView.NO_POSITION);
             }
         });
     }
 
     // fetching song data based on artist
     public void fetchSongData(String artist) {
+        // if search empty, update with exsiting song list
+        // and also existing selected position and playing position
+        if (artist.isEmpty()) {
+            _updateSongList.postValue(songItemList);
+            setSelectedPosition(this.selectedPosition);
+            setPlayingPosition(this.playingPosition);
+            return;
+        }
         // combine url with artist name keyed in by user
         String fullUrl = "";
         try {
@@ -95,8 +120,6 @@ public class MusicViewModel extends AndroidViewModel {
             return;
         }
 
-        // update observer that viewmodel start fetching new song data
-        _isNewArtistSearch.postValue(true);
         //clear song list before fetching data
         songItemList.clear();
 
@@ -143,8 +166,11 @@ public class MusicViewModel extends AndroidViewModel {
                     //display message to user
                     _displayMessage.postValue(getApplication().getString(R.string.error_song_data_not_found));
                 }
+
                 // update song list to observer
                 _updateSongList.postValue(songItemList);
+                setSelectedPosition(RecyclerView.NO_POSITION);
+                setPlayingPosition(RecyclerView.NO_POSITION);
             }
         }, new Response.ErrorListener() {
             @Override
@@ -162,12 +188,19 @@ public class MusicViewModel extends AndroidViewModel {
     }
 
     // prepare song to be played later
-    public void prepareMusic(SongItem item) {
+    private void prepareMusic(SongItem item) {
         // if item null or item previewurl is empty
         // no need to prepare anything
         if (item == null || item.previewUrl.isEmpty()) {
             Log.d(TAG, "no music to prepare");
             return;
+        }
+
+        if (preparedSong != null) {
+            if (preparedSong.previewUrl.equalsIgnoreCase(item.previewUrl)) {
+                Log.d(TAG, "same song have been prepared, do nothing");
+                return;
+            }
         }
 
         // preparing media player
@@ -177,6 +210,7 @@ public class MusicViewModel extends AndroidViewModel {
                 mediaPlayer.stop();
                 // update observer
                 _isMusicPlaying.postValue(false);
+                setPlayingPosition(RecyclerView.NO_POSITION);
             }
 
             // reset the media player
@@ -187,6 +221,9 @@ public class MusicViewModel extends AndroidViewModel {
 
             // prepare music
             mediaPlayer.prepare();
+
+            // update prepared song
+            preparedSong = item;
         } catch (IOException e) {
             e.printStackTrace();
             Log.e(TAG, "fail to prepare audio, exception: " + e.getMessage());
@@ -211,6 +248,54 @@ public class MusicViewModel extends AndroidViewModel {
 
         // update data to observer
         _isMusicPlaying.postValue(mediaPlayer.isPlaying());
+        if (mediaPlayer.isPlaying()) {
+            setPlayingPosition(this.selectedPosition);
+        } else {
+            setPlayingPosition(RecyclerView.NO_POSITION);
+        }
+    }
+
+    public void onSelectedSongItem(int selectedPosition) {
+        SongItem item = null;
+        if (selectedPosition >= 0 && selectedPosition < songItemList.size()) {
+            item = songItemList.get(selectedPosition);
+        }
+
+        if (item != null) {
+            // prepare music based on selected song
+            prepareMusic(item);
+            setSelectedPosition(selectedPosition);
+
+            _getMusicPlayerVisibility.postValue(View.VISIBLE);
+            _getSelectedSongTitle.postValue(item.songTitle);
+            _getSelectedArtistName.postValue(item.artistName);
+        } else {
+            setSelectedPosition(RecyclerView.NO_POSITION);
+
+            if (mediaPlayer.isPlaying()) {
+                _getMusicPlayerVisibility.postValue(View.VISIBLE);
+            } else {
+                _getMusicPlayerVisibility.postValue(View.GONE);
+            }
+        }
+    }
+
+    // ondestroy
+    public void onDestroy() {
+        // release media player
+        mediaPlayer.release();
+    }
+
+    // set selected song item position
+    public void setSelectedPosition(int position) {
+        selectedPosition = position;
+        _updateSelectedPosition.postValue(selectedPosition);
+    }
+
+    // set playing song item position
+    public void setPlayingPosition(int position) {
+        playingPosition = position;
+        _updatePlayingPosition.postValue(playingPosition);
     }
 
     // Livedata functions for observer
@@ -220,13 +305,25 @@ public class MusicViewModel extends AndroidViewModel {
     public LiveData<Boolean> isMusicPlaying() {
         return _isMusicPlaying;
     }
-    public LiveData<Boolean> isNewArtisSearch() {
-        return _isNewArtistSearch;
-    }
     public LiveData<Boolean> isLoadingDialogShowing() {
         return _isLoadingDialogShowing;
     }
     public LiveData<String> displayMessage() {
         return _displayMessage;
+    }
+    public LiveData<Integer> getMusicPlayerVisibility() {
+        return _getMusicPlayerVisibility;
+    }
+    public LiveData<String> getSelectedSongTitle() {
+        return _getSelectedSongTitle;
+    }
+    public LiveData<String> getSelectedArtistName() {
+        return _getSelectedArtistName;
+    }
+    public LiveData<Integer> updateSelectedPosition() {
+        return _updateSelectedPosition;
+    }
+    public LiveData<Integer> updatePlayingPosition() {
+        return _updatePlayingPosition;
     }
 }
